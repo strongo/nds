@@ -13,6 +13,7 @@ import (
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/memcache"
+	"strconv"
 )
 
 const (
@@ -131,8 +132,17 @@ func checkKeysValues(keys []*datastore.Key, values reflect.Value) error {
 	return nil
 }
 
-func createMemcacheKey(key *datastore.Key) string {
-	memcacheKey := memcachePrefix + key.Encode()
+func createMemcacheKey(key *datastore.Key) (memcacheKey string) {
+	if key.Parent() == nil {
+		if key.IntID() != 0 {
+			return key.Kind() + "=" + strconv.FormatInt(key.IntID(), 10)
+		} else if strID := key.StringID(); strID != "" {
+			if memcacheKey = key.Kind() + ":" + key.StringID(); len(memcacheKey) < memcacheMaxKeySize {
+				return
+			}
+		}
+	}
+	memcacheKey = memcachePrefix + key.Encode()
 	if len(memcacheKey) > memcacheMaxKeySize {
 		hash := sha1.Sum([]byte(memcacheKey))
 		memcacheKey = hex.EncodeToString(hash[:])

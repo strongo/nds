@@ -9,6 +9,7 @@ import (
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
 	"google.golang.org/appengine/memcache"
+	"strings"
 )
 
 // putMultiLimit is the App Engine datastore limit for the maximum number
@@ -141,10 +142,24 @@ func putMulti(c context.Context,
 
 	defer func() {
 		if _, ok := transactionFromContext(c); !ok {
+			// TODO: Save stored to datatore items to memcache?
+			//v := reflect.ValueOf(vals)
+			//for i, memcacheItem := range lockMemcacheItems {
+			//	memcacheItem.Flags = entityItem
+			//	memcacheItem.Value = v.Index(i)
+			//	if memcacheItem.state == internalLock {
+			//		saveItems = append(saveItems, cacheItem.item)
+			//	}
+			//}
+			//
+			//if err := memcacheCompareAndSwapMulti(c, saveItems); err != nil {
+			//	log.Warningf(c, "nds:putMulti CompareAndSwapMulti %s", err)
+			//}
+
 			// Remove the locks.
-			if err := memcacheDeleteMulti(memcacheCtx,
-				lockMemcacheKeys); err != nil {
+			if err := memcacheDeleteMulti(memcacheCtx, lockMemcacheKeys); err != nil {
 				log.Warningf(c, "putMulti memcache.DeleteMulti %s", err)
+				// TODO: queue deferred task to delete keys from memcache
 			}
 		}
 	}()
@@ -154,9 +169,12 @@ func putMulti(c context.Context,
 		tx.lockMemcacheItems = append(tx.lockMemcacheItems,
 			lockMemcacheItems...)
 		tx.Unlock()
-	} else if err := memcacheSetMulti(memcacheCtx,
-		lockMemcacheItems); err != nil {
-		return nil, err
+	} else if err := memcacheSetMulti(memcacheCtx, lockMemcacheItems); err != nil {
+		if strings.Contains(err.Error(), "Memcache is temporarily unavailable") {
+			log.Warningf(c, "memcacheSetMulti(len(lockMemcacheItems)=%v): %v", len(lockMemcacheItems), err)
+		} else {
+			return nil, err
+		}
 	}
 
 	// Save to the datastore.

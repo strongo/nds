@@ -13,6 +13,7 @@ import (
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
 	"google.golang.org/appengine/memcache"
+	"fmt"
 )
 
 // getMultiLimit is the App Engine datastore limit for the maximum number
@@ -120,7 +121,7 @@ func Get(c context.Context, key *datastore.Key, val interface{}) error {
 type cacheState byte
 
 const (
-	miss cacheState = iota
+	miss         cacheState = iota
 	internalLock
 	externalLock
 	done
@@ -200,6 +201,11 @@ func loadMemcache(c context.Context, cacheItems []cacheItem) {
 		return
 	}
 
+	var (
+		buf       bytes.Buffer
+		missCount int
+	)
+
 	for i, memcacheKey := range memcacheKeys {
 		if item, ok := items[memcacheKey]; ok {
 			switch item.Flags {
@@ -225,7 +231,17 @@ func loadMemcache(c context.Context, cacheItems []cacheItem) {
 				log.Warningf(c, "nds:loadMemcache unknown item.Flags %d", item.Flags)
 				cacheItems[i].state = externalLock
 			}
+		} else {
+			missCount += 1
+			fmt.Fprintf(&buf, "\t%v\n", memcacheKey)
 		}
+	}
+	switch missCount {
+	case 0: // Nothing to report
+	case 1:
+		log.Debugf(c, "nds:miss:%v", buf.String())
+	default:
+		log.Debugf(c, "nds:miss:%d:\n%v", missCount, buf.String())
 	}
 }
 

@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/qedus/nds"
+	"github.com/strongo/nds"
 
 	"errors"
 
