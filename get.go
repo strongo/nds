@@ -8,12 +8,12 @@ import (
 	"sync"
 	"time"
 
-	"golang.org/x/net/context"
+	"fmt"
+	"context"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
 	"google.golang.org/appengine/memcache"
-	"fmt"
 )
 
 // getMultiLimit is the App Engine datastore limit for the maximum number
@@ -121,7 +121,7 @@ func Get(c context.Context, key *datastore.Key, val interface{}) error {
 type cacheState byte
 
 const (
-	miss         cacheState = iota
+	miss cacheState = iota
 	internalLock
 	externalLock
 	done
@@ -282,7 +282,7 @@ func lockMemcache(c context.Context, cacheItems []cacheItem) {
 
 	// We don't care if there are errors here.
 	if err := memcacheAddMulti(c, lockItems); err != nil {
-		log.Warningf(c, "nds:lockMemcache AddMulti %s", err)
+		log.Debugf(c, "nds:lockMemcache AddMulti %s", err)
 	}
 
 	// Get the items again so we can use CAS when updating the cache.
@@ -295,7 +295,7 @@ func lockMemcache(c context.Context, cacheItems []cacheItem) {
 				cacheItems[i].state = externalLock
 			}
 		}
-		log.Warningf(c, "nds:lockMemcache GetMulti %s", err)
+		log.Debugf(c, "nds:lockMemcache GetMulti %s", err)
 		return
 	}
 
@@ -324,7 +324,7 @@ func lockMemcache(c context.Context, cacheItems []cacheItem) {
 					if err := setValue(cacheItems[i].val, pl); err == nil {
 						cacheItems[i].state = done
 					} else {
-						log.Warningf(c, "nds:lockMemcache setValue %s", err)
+						log.Debugf(c, "nds:lockMemcache setValue %s", err)
 						cacheItems[i].state = externalLock
 					}
 				default:

@@ -3,8 +3,9 @@ package nds
 import (
 	"sync"
 
-	"golang.org/x/net/context"
+	"context"
 	"google.golang.org/appengine/datastore"
+	"google.golang.org/appengine/log"
 	"google.golang.org/appengine/memcache"
 )
 
@@ -26,20 +27,31 @@ func transactionFromContext(c context.Context) (*transaction, bool) {
 func RunInTransaction(c context.Context, f func(tc context.Context) error,
 	opts *datastore.TransactionOptions) error {
 
-	return datastore.RunInTransaction(c, func(tc context.Context) error {
+	return datastore.RunInTransaction(c, func(tc context.Context) (err error) {
+		log.Debugf(c, "datastore transaction started")
+		defer func() {
+			if err == nil {
+				log.Debugf(c, "exiting datastore transaction err == nil")
+			} else {
+				log.Errorf(c, "datastore transaction failed: "+err.Error())
+			}
+		}()
 		tx := &transaction{}
 		tc = context.WithValue(tc, &transactionKey, tx)
-		if err := f(tc); err != nil {
-			return err
+		if err = f(tc); err != nil {
+			return
 		}
 
 		// tx.Unlock() is not called as the tx context should never be called
 		//again so we rather block than allow people to misuse the context.
 		tx.Lock()
-		memcacheCtx, err := memcacheContext(tc)
-		if err != nil {
-			return err
+		var memcacheCtx context.Context
+		if memcacheCtx, err = memcacheContext(tc); err != nil {
+			return
 		}
-		return memcacheSetMulti(memcacheCtx, tx.lockMemcacheItems)
+		if err = memcacheSetMulti(memcacheCtx, tx.lockMemcacheItems); err != nil {
+			return
+		}
+		return
 	}, opts)
 }
