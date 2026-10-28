@@ -4,8 +4,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/strongo/nds"
 	"context"
+	"github.com/qedus/nds"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 )

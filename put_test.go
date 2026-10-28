@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/strongo/nds"
 	"context"
+	"github.com/qedus/nds"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/memcache"

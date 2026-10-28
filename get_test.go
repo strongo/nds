@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/strongo/nds"
+	"github.com/qedus/nds"
 
 	"errors"
 
@@ -505,7 +505,7 @@ func TestGetMultiLockReturnEntitySetValueFail(t *testing.T) {
 			return nil, err
 		}
 		pl := datastore.PropertyList{
-			datastore.Property{"One", 1, false, false},
+			datastore.Property{Name: "One", Value: 1},
 		}
 		value, err := nds.MarshalPropertyList(pl)
 		if err != nil {
@@ -565,7 +565,7 @@ func TestGetMultiLockReturnEntity(t *testing.T) {
 			return nil, err
 		}
 		pl := datastore.PropertyList{
-			datastore.Property{"IntVal", int64(5), false, false},
+			datastore.Property{Name: "IntVal", Value: int64(5)},
 		}
 		value, err := nds.MarshalPropertyList(pl)
 		if err != nil {

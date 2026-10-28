@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/strongo/nds"
+	"github.com/qedus/nds"
 
 	"errors"
 
