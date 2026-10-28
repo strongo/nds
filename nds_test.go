@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/strongo/nds"
+	"github.com/qedus/nds"
 
 	"context"
 	"google.golang.org/appengine"
@@ -546,7 +546,7 @@ func TestMarshalUnmarshalPropertyList(t *testing.T) {
 	blobKeyProp := datastore.Property{Name: "BlobKey",
 		Value: blobKeyVal, NoIndex: false, Multiple: false}
 
-	geoPointVal := appengine.GeoPoint{1, 2}
+	geoPointVal := appengine.GeoPoint{Lat: 1, Lng: 2}
 	geoPointProp := datastore.Property{Name: "GeoPoint",
 		Value: geoPointVal, NoIndex: false, Multiple: false}
 
@@ -606,7 +606,7 @@ func TestMartialPropertyListError(t *testing.T) {
 	}
 
 	pl := datastore.PropertyList{
-		datastore.Property{"Prop", &testEntity{3}, false, false},
+		datastore.Property{Name: "Prop", Value: &testEntity{3}},
 	}
 	if _, err := nds.MarshalPropertyList(pl); err == nil {
 		t.Fatal("expected error")
